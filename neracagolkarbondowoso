@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Laporan Neraca Keuangan Partai Golkar</title>
+<style>
+    body { font-family: Arial, sans-serif; background-color: #fff9e6; color: #333; margin: 20px; }
+    h1, h2 { color: #f4c000; }
+    table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
+    table, th, td { border: 1px solid #ddd; }
+    th, td { padding: 8px; text-align: left; }
+    th { background-color: #f4c000; color: #fff; }
+    input, select, button { padding: 5px; margin: 5px 0; }
+    button { background-color: #f4c000; border: none; color: #fff; cursor: pointer; }
+    button:hover { background-color: #e0b000; }
+    .filter { margin-bottom: 10px; }
+</style>
+</head>
+<body>
+
+<h1>Laporan Neraca Keuangan Partai Golkar</h1>
+
+<h2>Input Transaksi</h2>
+<form id="transaksiForm">
+    Tanggal: <input type="date" id="tanggal" required>
+    Jenis: 
+    <select id="jenis">
+        <option value="pemasukan">Pemasukan</option>
+        <option value="pengeluaran">Pengeluaran</option>
+    </select>
+    Jumlah: <input type="number" id="jumlah" required>
+    Keterangan: <input type="text" id="keterangan" required>
+    <button type="submit">Tambah Transaksi</button>
+</form>
+
+<h2>Filter Laporan</h2>
+<div class="filter">
+    Bulan: 
+    <select id="filterBulan">
+        <option value="all">Semua</option>
+        <option value="1">Januari</option>
+        <option value="2">Februari</option>
+        <option value="3">Maret</option>
+        <option value="4">April</option>
+        <option value="5">Mei</option>
+        <option value="6">Juni</option>
+        <option value="7">Juli</option>
+        <option value="8">Agustus</option>
+        <option value="9">September</option>
+        <option value="10">Oktober</option>
+        <option value="11">November</option>
+        <option value="12">Desember</option>
+    </select>
+    Tahun: 
+    <select id="filterTahun">
+        <option value="all">Semua</option>
+    </select>
+    <button onclick="applyFilter()">Terapkan</button>
+</div>
+
+<h2>Daftar Transaksi</h2>
+<table id="tabelTransaksi">
+    <thead>
+        <tr>
+            <th>Tanggal</th>
+            <th>Jenis</th>
+            <th>Jumlah</th>
+            <th>Keterangan</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<h2>Ringkasan</h2>
+<p>Total Pemasukan: <span id="totalPemasukan">0</span></p>
+<p>Total Pengeluaran: <span id="totalPengeluaran">0</span></p>
+<p>Saldo: <span id="saldo">0</span></p>
+
+<h2>Ringkasan Hutang 5 Tahun</h2>
+<table id="tabelHutang">
+    <thead>
+        <tr>
+            <th>Tahun</th>
+            <th>Sisa Hutang</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<script>
+let transaksi = [
+    { tanggal: '2025-01-05', jenis: 'pemasukan', jumlah: 5000000, keterangan: 'Sumbangan anggota' },
+    { tanggal: '2025-01-12', jenis: 'pengeluaran', jumlah: 2000000, keterangan: 'Operasional kantor' },
+    { tanggal: '2025-02-10', jenis: 'pemasukan', jumlah: 3000000, keterangan: 'Donasi publik' },
+    { tanggal: '2025-02-18', jenis: 'pengeluaran', jumlah: 1500000, keterangan: 'Transport & logistik' },
+    { tanggal: '2025-03-03', jenis: 'pengeluaran', jumlah: 1000000, keterangan: 'Konsumsi rapat' },
+    { tanggal: '2025-03-15', jenis: 'pemasukan', jumlah: 4000000, keterangan: 'Sumbangan anggota' }
+];
+
+let sisaHutang = {
+    2025: 5000000,
+    2026: 4000000,
+    2027: 3000000,
+    2028: 2000000,
+    2029: 1000000
+};
+
+// isi dropdown tahun berdasarkan data transaksi
+const tahunSet = new Set(transaksi.map(t => new Date(t.tanggal).getFullYear()));
+const filterTahun = document.getElementById('filterTahun');
+tahunSet.forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t;
+    opt.textContent = t;
+    filterTahun.appendChild(opt);
+});
+
+document.getElementById('transaksiForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const tanggal = document.getElementById('tanggal').value;
+    const jenis = document.getElementById('jenis').value;
+    const jumlah = parseFloat(document.getElementById('jumlah').value);
+    const keterangan = document.getElementById('keterangan').value;
+
+    transaksi.push({ tanggal, jenis, jumlah, keterangan });
+    updateTabel(transaksi);
+    updateRingkasan(transaksi);
+    this.reset();
+});
+
+function updateTabel(data) {
+    const tbody = document.querySelector('#tabelTransaksi tbody');
+    tbody.innerHTML = '';
+    data.forEach(t => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${t.tanggal}</td><td>${t.jenis}</td><td>${t.jumlah.toLocaleString('id-ID')}</td><td>${t.keterangan}</td>`;
+        tbody.appendChild(tr);
+    });
+}
+
+function updateRingkasan(data) {
+    const totalPemasukan = data.filter(t => t.jenis==='pemasukan').reduce((a,b)=>a+b.jumlah,0);
+    const totalPengeluaran = data.filter(t => t.jenis==='pengeluaran').reduce((a,b)=>a+b.jumlah,0);
+    const saldo = totalPemasukan - totalPengeluaran;
+
+    document.getElementById('totalPemasukan').textContent = totalPemasukan.toLocaleString('id-ID');
+    document.getElementById('totalPengeluaran').textContent = totalPengeluaran.toLocaleString('id-ID');
+    document.getElementById('saldo').textContent = saldo.toLocaleString('id-ID');
+
+    const tbodyHutang = document.querySelector('#tabelHutang tbody');
+    tbodyHutang.innerHTML = '';
+    for (let tahun in sisaHutang) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${tahun}</td><td>${sisaHutang[tahun].toLocaleString('id-ID')}</td>`;
+        tbodyHutang.appendChild(tr);
+    }
+}
+
+function applyFilter() {
+    const bulan = document.getElementById('filterBulan').value;
+    const tahun = document.getElementById('filterTahun').value;
+    let dataFiltered = transaksi;
+
+    if (bulan !== 'all') {
+        dataFiltered = dataFiltered.filter(t => new Date(t.tanggal).getMonth()+1 == bulan);
+    }
+    if (tahun !== 'all') {
+        dataFiltered = dataFiltered.filter(t => new Date(t.tanggal).getFullYear() == tahun);
+    }
+
+    updateTabel(dataFiltered);
+    updateRingkasan(dataFiltered);
+}
+
+// tampilkan default
+updateTabel(transaksi);
+updateRingkasan(transaksi);
+
+</script>
+
+</body>
+</html>
